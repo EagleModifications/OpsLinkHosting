@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Register – OpsLink Hosting</title>
+<link rel="icon" href="assets/hero.png" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+:root {
+  --bg: #05070d;
+  --glass: rgba(15, 22, 45, 0.95);
+  --border: rgba(255,255,255,0.12);
+  --accent: #4e8cff;
+  --accent2: #6ea2ff;
+  --glow: 0 0 18px rgba(78,140,255,.45);
+  --text: #e8eeff;
+  --soft: #9aa6c7;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  font-family: "Segoe UI", sans-serif;
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  color: var(--text);
+}
+
+/* ---------- NAVBAR ---------- */
+.nav {
+  width: 100%;
+  padding: 18px 0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(15px);
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  z-index: 50;
+}
+.nav-inner {
+  max-width: 1350px;
+  margin: auto;
+  padding: 0 40px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.nav-links a,
+.nav-links a:visited,
+.nav-links a:hover,
+.nav-links a:active,
+.nav-links a:focus {
+    text-decoration: none; /* remove underline */
+    color: var(--text);
+    opacity: 0.75;
+    transition: 0.25s;
+}
+.dropdown-content a,
+.dropdown-content a:visited,
+.dropdown-content a:hover,
+.dropdown-content a:active,
+.dropdown-content a:focus {
+    text-decoration: none; /* remove underline in dropdown */
+    color: var(--text);
+    opacity: 0.9;
+    transition: 0.2s;
+}
+.logo { font-size: 30px; font-weight: 800; letter-spacing: .5px; }
+.logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 24px; align-items: center; }
+.nav-links a { color: var(--text); font-size: 16px; opacity: .75; transition: .25s; }
+.nav-links a:hover { opacity: 1; color: var(--accent); }
+.login-btn { padding: 8px 20px; background: var(--accent); border-radius: 999px; color: #fff; font-weight: 600; transition: .25s; }
+.login-btn:hover { background: var(--accent2); box-shadow: var(--glow); transform: translateY(-2px); }
+
+/* ---------- DROPDOWNS ---------- */
+.dropdown { position: relative; }
+.dropdown-content {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  min-width: 160px;
+  z-index: 100;
+  flex-direction: column;
+}
+.dropdown-content a {
+  padding: 10px 16px;
+  display: block;
+  color: var(--text);
+  opacity: 0.9;
+  transition: 0.2s;
+}
+.dropdown-content a:hover {
+  background: var(--accent);
+  color: white;
+  opacity:1;
+}
+.dropdown:hover .dropdown-content { display: flex; }
+
+/* ---------- REGISTER CARD ---------- */
+.card-wrapper {
+  flex: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 20px;
+}
+
+.card {
+  background: rgba(255,255,255,0.05);
+  padding: 35px 40px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.07);
+  backdrop-filter: blur(12px);
+  color: #dbe4f3;
+  text-align: center;
+  width: 100%;
+  max-width: 420px;
+}
+
+.logo { font-size: 32px; font-weight: bold; margin-bottom: 5px; }
+.logo span { color: #4e8cff; }
+.subtitle { opacity: 0.7; font-size: 15px; margin-bottom: 28px; }
+
+.input-group { text-align: left; margin-bottom: 18px; }
+label { font-size: 14px; margin-bottom: 6px; display: block; }
+.input-box {
+  width: 100%;
+  padding: 14px;
+  background: #0f1622;
+  border: 1px solid #2b3545;
+  color: #dbe4f3;
+  border-radius: 8px;
+  font-size: 15px;
+  transition: 0.2s;
+}
+.input-box:focus { border-color: #4e8cff; outline: none; }
+.error-text { color: #ff4c4c; font-size: 13px; margin-top: 4px; display: none; }
+
+.btn-primary {
+  width: 100%;
+  padding: 14px;
+  background: #4e8cff;
+  border: none;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: 600;
+  color: #fff;
+  cursor: pointer;
+  transition: 0.2s;
+  margin-top: 10px;
+}
+.btn-primary:hover { background: #3675e9; }
+
+.bottom-links { margin-top: 25px; font-size: 14px; }
+.bottom-links a { color: #4e8cff; text-decoration: none; margin: 0 8px; font-weight: 600; }
+.bottom-links a:hover { text-decoration: none; }
+
+/* ---------- MODAL ---------- */
+.ui-modal {
+  position: fixed;
+  inset: 0;
+  background: rgba(5, 7, 13, 0.75);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  transition: opacity 0.25s ease;
+}
+.ui-modal.hidden { opacity: 0; pointer-events: none; }
+
+.ui-card {
+  background: var(--glass);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 28px;
+  width: 100%;
+  max-width: 420px;
+  box-shadow: var(--glow);
+  text-align: center;
+  animation: popIn 0.25s ease;
+}
+.ui-card h3 { color: var(--accent); margin-bottom: 12px; }
+.ui-card p { color: var(--soft); margin-bottom: 22px; }
+.ui-actions { display: flex; justify-content: center; gap: 12px; }
+@keyframes popIn { from { transform: scale(0.92); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+
+#userDropdown {
+  display: none;
+  position: absolute;
+  top: 45px; /* right under icon */
+  right: 0;
+  background: rgba(15,22,45,0.95);
+  border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 10px;
+  flex-direction: column;
+  min-width: 180px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  z-index: 1000;
+  padding: 8px 0;
+}
+#userDropdown a {
+  padding: 10px 16px;
+  display: block;
+  color: #e8eeff;
+  opacity: 0.9;
+  transition: 0.2s;
+}
+#userDropdown a:hover {
+  background: #4e8cff;
+  color: white;
+  opacity: 1;
+}
+#userDropdown.show {
+  display: flex;
+  flex-direction: column;
+}
+
+</style>
+</head>
+<body>
+
+<header class="nav">
+  <div class="nav-inner">
+    <div class="logo">OpsLink<span>Hosting</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <div class="dropdown">
+        <a href="game-hosting.html?filter=all">Game Servers</a>
+        <div class="dropdown-content">
+          <a href="game-hosting.html?filter=minecraft">Minecraft</a>
+          <a href="game-hosting.html?filter=source">Source Engine</a>
+          <a href="game-hosting.html?filter=rust">Rust</a>
+          <a href="game-hosting.html?filter=all">All</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <a href="voice-hosting.html?filter=all">Voice Servers</a>
+        <div class="dropdown-content">
+          <a href="voice-hosting.html?filter=mumble">Mumble</a>
+          <a href="voice-hosting.html?filter=ts3">Teamspeak3</a>
+          <a href="voice-hosting.html?filter=all">All</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <a href="vps-hosting.html">VPS</a>
+        <div class="dropdown-content">
+          <a href="vps-hosting.html">Enterprise VPS</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <a href="bot-hosting.html?filter=all">Discord Bots</a>
+        <div class="dropdown-content">
+          <a href="bot-hosting.html?filter=nodejs">Node.js</a>
+          <a href="bot-hosting.html?filter=python">Python</a>
+          <a href="bot-hosting.html?filter=all">All</a>
+        </div>
+      </div>
+      <div class="dropdown">
+        <a href="website-hosting.html?filter=all">Website Hosting</a>
+        <div class="dropdown-content">
+          <a href="website-hosting.html?filter=static" data-filter="static">Static</a>
+          <a href="website-hosting.html?filter=dynamic" data-filter="dynamic">Non-Static</a>
+          <a href="website-hosting.html?filter=all" data-filter="all">All</a>
+        </div>
+      </div>
+      <a href="about.html">About</a>
+      <a href="contact.html">Contact</a>
+      <a href="support.html">Support</a>
+      <a href="auth-login.html" class="login-btn" id="loginBtn">Login</a>
+      <div id="userWrapper" style="position: relative; display: inline-block;">
+        <img id="userIcon" src="assets/user-circle.png" style="width:35px; height:35px; border-radius:50%; cursor:pointer;">
+        <div id="userDropdown">
+          <a href="account.html">Account Settings</a>
+          <a href="invoice.html">Subscriptions</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<!-- Modern Alert Modal -->
+<div id="uiModal" class="ui-modal hidden">
+  <div class="ui-card">
+    <h3 id="uiTitle">Notice</h3>
+    <p id="uiMessage"></p>
+    <div class="ui-actions">
+      <button id="uiConfirm" class="btn btn-primary">OK</button>
+    </div>
+  </div>
+</div>
+
+<div class="card-wrapper">
+  <div class="card">
+    <div class="logo">OpsLink<span>Hosting</span></div>
+    <div class="subtitle">Create a new account</div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input id="email" class="input-box" type="email" placeholder="email@example.com">
+      <div id="emailError" class="error-text">Please enter a valid email</div>
+    </div>
+
+    <div class="input-group">
+      <label>Password</label>
+      <input id="password" class="input-box" type="password" placeholder="Enter password">
+      <div id="passwordError" class="error-text">Password required</div>
+    </div>
+
+    <div class="input-group">
+      <label>Confirm Password</label>
+      <input id="confirmPassword" class="input-box" type="password" placeholder="Confirm password">
+      <div id="confirmError" class="error-text">Passwords do not match</div>
+    </div>
+
+    <button class="btn-primary" onclick="register()">Register</button>
+
+    <div class="bottom-links">
+      <label>Already have an account?</label>
+      <a href="auth-login.html">LOGIN</a>
+    </div>
+  </div>
+</div>
+
+<script>
+const token = localStorage.getItem("token");
+const userWrapper = document.getElementById("userWrapper");
+const userIcon = document.getElementById("userIcon");
+const userDropdown = document.getElementById("userDropdown");
+
+async function uiAlert(message, title = "Notice") {
+  return new Promise((resolve) => {
+    const modal = document.getElementById("uiModal");
+    const uiTitle = document.getElementById("uiTitle");
+    const uiMessage = document.getElementById("uiMessage");
+    const confirmBtn = document.getElementById("uiConfirm");
+
+    uiTitle.textContent = title;
+    uiMessage.textContent = message;
+
+    modal.classList.remove("hidden");
+
+    const cleanup = () => {
+      modal.classList.add("hidden");
+      confirmBtn.removeEventListener("click", onConfirm);
+    };
+
+    const onConfirm = () => { cleanup(); resolve(true); };
+
+    confirmBtn.addEventListener("click", onConfirm);
+  });
+}
+
+// Show login or user menu
+function updateNavbar() {
+  const loginBtn = document.getElementById("loginBtn");
+  const userWrapper = document.getElementById("userWrapper");
+  if (token) {
+    loginBtn.style.display = "none";
+    userWrapper.style.display = "inline-block";
+  } else {
+    loginBtn.style.display = "inline-block";
+    userWrapper.style.display = "none";
+  }
+}
+updateNavbar();
+
+const loginBtn = document.getElementById("loginBtn");
+
+// Update navbar based on login state
+function updateNavbar() {
+  if(token){
+    loginBtn.style.display = "none";       // hide login button
+    userWrapper.style.display = "inline-block"; // show user icon
+  } else {
+    loginBtn.style.display = "inline-block";
+    userWrapper.style.display = "none";
+  }
+}
+updateNavbar();
+
+// Toggle user dropdown
+userIcon.addEventListener("click", (e) => {
+  e.stopPropagation();
+  userDropdown.classList.toggle("show");
+  userDropdown.style.display = "flex";
+});
+
+// Click outside closes dropdown
+document.addEventListener("click", () => {
+  userDropdown.classList.remove("show");
+  userDropdown.style.display = "none";
+});
+
+// Prevent inside click from closing
+userDropdown.addEventListener("click", (e) => {
+  e.stopPropagation();
+});
+
+// Logout
+document.getElementById("logoutBtn")?.addEventListener("click", () => {
+  localStorage.removeItem("token");
+  window.location.reload();
+});
+
+// Register function with uiAlert
+async function register() {
+  const email = document.getElementById("email");
+  const pw = document.getElementById("password");
+  const cpw = document.getElementById("confirmPassword");
+
+  document.querySelectorAll(".error-text").forEach(e => e.style.display = "none");
+  let error = false;
+
+  if (!email.value.includes("@")) { document.getElementById("emailError").style.display = "block"; error = true; }
+  if (!pw.value) { document.getElementById("passwordError").style.display = "block"; error = true; }
+  if (pw.value !== cpw.value) { document.getElementById("confirmError").style.display = "block"; error = true; }
+  if (error) return;
+
+  try {
+    const res = await fetch("/api/register", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ email: email.value, password: pw.value })
+    });
+
+    const data = await res.json();
+    if (!data.success) {
+      await uiAlert(data.message || "Registration failed.", "Error");
+      return;
+    }
+
+    await uiAlert("Account created! Please log in.", "Success");
+    window.location.href = "auth-login.html";
+
+  } catch (err) {
+    await uiAlert("Server error. Please try again later.", "Error");
+  }
+}
+</script>
+
+</body>
+</html>

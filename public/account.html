@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Account - OpsLink Hosting</title>
+<link rel="icon" href="assets/hero.png" />
+<style>
+:root {
+  --bg: #05070d;
+  --glass: rgba(15, 22, 45, 0.95);
+  --border: rgba(255,255,255,0.12);
+  --accent: #4e8cff;
+  --accent2: #6ea2ff;
+  --glow: 0 0 18px rgba(78,140,255,.45);
+  --text: #e8eeff;
+  --soft: #9aa6c7;
+  --radius: 16px;
+  --radius-sm: 10px;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { background: var(--bg); color: var(--text); font-family: "Segoe UI", system-ui, sans-serif; overflow-x: hidden; }
+a { color: inherit; text-decoration: none; }
+button { font-family: inherit; cursor: pointer; }
+
+.nav { width: 100%; padding: 18px 0; background: rgba(0,0,0,0.55); backdrop-filter: blur(15px); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 50; }
+.nav-inner { max-width: 1350px; margin: auto; padding: 0 40px; display: flex; justify-content: space-between; align-items: center; }
+.logo { font-size: 30px; font-weight: 800; letter-spacing: .5px; }
+.logo span { color: var(--accent); }
+.nav-links { display: flex; gap: 24px; align-items: center; }
+.nav-links a { color: var(--text); font-size: 16px; opacity: .75; transition: .25s; }
+.nav-links a:hover { opacity: 1; color: var(--accent); }
+.login-btn { padding: 8px 20px; background: var(--accent); border-radius: 999px; color: #fff; font-weight: 600; transition: .25s; }
+.login-btn:hover { background: var(--accent2); box-shadow: var(--glow); transform: translateY(-2px); }
+
+#userDropdown { display:none; position:absolute; top:100%; right:0; background:var(--glass); border:1px solid var(--border); border-radius:var(--radius-sm); flex-direction:column; min-width:180px; z-index:1000; box-shadow:0 4px 20px rgba(0,0,0,0.4); padding:8px 0; transition:0.2s; }
+#userDropdown a { padding:10px 16px; display:block; color:var(--text); opacity:0.9; }
+#userDropdown a:hover { background:var(--accent); color:white; opacity:1; }
+
+.features { max-width:1200px; margin:auto; display:grid; grid-template-columns:1fr; gap:20px; padding:20px; }
+.card { background: var(--glass); border:1px solid var(--border); padding:25px; border-radius:var(--radius); text-align:center; box-shadow:0 0 30px rgba(0,0,0,0.2); transition:0.25s; }
+.card:hover { border-color: var(--accent); box-shadow: var(--glow); transform:translateY(-5px); }
+.card h3 { color:var(--accent); font-size:22px; margin-bottom:10px; }
+.card p { margin-bottom:10px; color:var(--soft); }
+
+.input-box { width:100%; padding:12px; background:#0f1622; border:1px solid #2b3545; color:#dbe4f3; border-radius:8px; font-size:15px; transition:0.2s; }
+.input-box:focus { border-color: var(--accent); outline:none; }
+
+.btn { padding:12px 28px; border-radius:var(--radius-sm); font-weight:600; border:none; transition:0.25s; }
+.btn-primary { background: var(--accent); color:white; }
+.btn-primary:hover { background: var(--accent2); box-shadow: var(--glow); transform:translateY(-2px); }
+.btn-outline { background:transparent; border:1px solid var(--accent); color:var(--accent); }
+.btn-outline:hover { background: var(--accent); color:white; box-shadow: var(--glow); transform:translateY(-2px); }
+
+.status-badge { padding:4px 8px; border-radius:8px; font-weight:600; font-size:12px; text-transform: uppercase; }
+.status-active { background: #00ff88; color: #05070d; }
+.status-pending { background: #ffb347; color: #05070d; }
+.status-failed { background: #ff4c4c; color: #fff; }
+.status-canceled { background: #aaa; color: #05070d; }
+
+@media(max-width:768px){ .nav-inner { flex-direction: column; gap:10px; } }
+</style>
+</head>
+<body>
+<header class="nav">
+  <div class="nav-inner">
+    <div class="logo">OpsLink<span>Hosting</span></div>
+    <div class="nav-links">
+      <a href="index.html">Home</a>
+      <a href="auth-login.html" class="login-btn" id="loginBtn">Login</a>
+      <div id="userWrapper" style="position: relative; display: inline-block;">
+        <img id="userIcon" src="assets/user-circle.png" style="width:35px; height:35px; border-radius:50%; cursor:pointer;">
+        <div id="userDropdown">
+          <a href="account.html">Account Settings</a>
+          <a href="invoice.html">Subscriptions</a>
+          <a href="#" id="logoutBtn">Logout</a>
+        </div>
+      </div>
+    </div>
+  </div>
+</header>
+
+<section class="features">
+  <!-- Account Settings Card -->
+  <div class="card" id="accountSettingsCard">
+    <h3>Account Settings</h3>
+    <div style="display:flex; flex-direction:column; align-items:center; margin-bottom:20px;">
+      <img id="profilePic" src="assets/user-circle.png" style="width:100px; height:100px; border-radius:50%; object-fit:cover; margin-bottom:10px;">
+      <input type="file" id="profilePicInput" accept="image/*" style="display:none;">
+      <button class="btn btn-outline" onclick="document.getElementById('profilePicInput').click();">Change Profile Picture</button>
+    </div>
+
+    <div class="input-group">
+      <label for="emailInput">Email</label>
+      <input id="emailInput" class="input-box" type="email" placeholder="email@example.com">
+    </div>
+
+    <div class="input-group">
+      <label for="passwordInput">New Password</label>
+      <input id="passwordInput" class="input-box" type="password" placeholder="Enter new password">
+    </div>
+
+    <div class="input-group">
+      <label for="twoFA">Two-Factor Authentication</label>
+      <select id="twoFA" class="input-box">
+        <option value="disabled">Disabled</option>
+        <option value="enabled">Enabled</option>
+      </select>
+    </div>
+
+    <div style="display:flex; gap:10px; flex-wrap:wrap; justify-content:center; margin-top:10px;">
+      <button class="btn btn-primary" onclick="updateAccount()">Save Changes</button>
+      <button class="btn btn-outline" onclick="resetAccountForm()">Reset</button>
+      <button class="btn btn-outline" onclick="deleteAccount()" style="background:#ff4c4c; border-color:#ff4c4c; color:white;">Delete Account</button>
+    </div>
+  </div>
+
+  <!-- Servers List -->
+  <div id="serversContainer">
+    <p style="text-align:center; color:#9aa6c7;">Loading your servers...</p>
+  </div>
+</section>
+
+<script src="/js/account.js"></script>
+</body>
+</html>
