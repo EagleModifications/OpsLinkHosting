@@ -28,143 +28,45 @@ a { color:inherit; text-decoration:none; }
 button { font-family:inherit; cursor:pointer; }
 
 /* NAVBAR */
-.nav {
-  width:100%;
-  padding:18px 0;
-  background:rgba(0,0,0,0.55);
-  backdrop-filter:blur(15px);
-  border-bottom:1px solid var(--border);
-  position:sticky;
-  top:0;
-  z-index:50;
-}
-.nav-inner {
-  max-width:1350px;
-  margin:auto;
-  padding:0 40px;
-  display:flex;
-  justify-content:space-between;
-  align-items:center;
-}
+.nav { width:100%; padding:18px 0; background:rgba(0,0,0,0.55); backdrop-filter:blur(15px); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:50; }
+.nav-inner { max-width:1350px; margin:auto; padding:0 40px; display:flex; justify-content:space-between; align-items:center; }
 .logo { font-size:30px; font-weight:800; }
 .logo span { color:var(--accent); }
 .nav-links { display:flex; gap:24px; align-items:center; }
 .nav-links a { opacity:.75; transition:.25s; }
 .nav-links a:hover { opacity:1; color:var(--accent); }
-.login-btn {
-  padding:8px 20px;
-  background:var(--accent);
-  border-radius:999px;
-  color:#fff;
-  font-weight:600;
-}
+.login-btn { padding:8px 20px; background:var(--accent); border-radius:999px; color:#fff; font-weight:600; }
 .login-btn:hover { background:var(--accent2); box-shadow:var(--glow); }
 
 /* DROPDOWN */
 .dropdown { position:relative; }
-.dropdown-content {
-  display:none;
-  position:absolute;
-  top:100%;
-  left:0;
-  background:var(--glass);
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  min-width:160px;
-  flex-direction:column;
-  z-index:200;
-}
-.dropdown-content a {
-  padding:10px 16px;
-  opacity:.9;
-}
-.dropdown-content a:hover {
-  background:var(--accent);
-  color:#fff;
-}
+.dropdown-content { display:none; position:absolute; top:100%; left:0; background:var(--glass); border:1px solid var(--border); border-radius:var(--radius-sm); min-width:160px; flex-direction:column; z-index:200; }
+.dropdown-content a { padding:10px 16px; opacity:.9; }
+.dropdown-content a:hover { background:var(--accent); color:#fff; }
 .dropdown:hover .dropdown-content { display:flex; }
 
 /* USER MENU */
-#userDropdown {
-  position:absolute;
-  top:100%;
-  right:0;
-  background:var(--glass);
-  border:1px solid var(--border);
-  border-radius:var(--radius-sm);
-  min-width:180px;
-  opacity:0;
-  pointer-events:none;
-  transform:translateY(-5px);
-  transition:.2s;
-}
-#userDropdown.show {
-  opacity:1;
-  pointer-events:auto;
-  transform:translateY(0);
-}
-#userDropdown a {
-  padding:10px 16px;
-  display:block;
-}
-#userDropdown a:hover {
-  background:var(--accent);
-  color:#fff;
-}
+#userDropdown { position:absolute; top:100%; right:0; background:var(--glass); border:1px solid var(--border); border-radius:var(--radius-sm); min-width:180px; opacity:0; pointer-events:none; transform:translateY(-5px); transition:.2s; }
+#userDropdown.show { opacity:1; pointer-events:auto; transform:translateY(0); }
+#userDropdown a { padding:10px 16px; display:block; }
+#userDropdown a:hover { background:var(--accent); color:#fff; }
 
 /* HERO */
-.hero {
-  max-width:1350px;
-  margin:auto;
-  padding:80px 20px;
-  text-align:center;
-}
+.hero { max-width:1350px; margin:auto; padding:80px 20px; text-align:center; }
 .hero h2 { font-size:40px; }
 .hero p { color:var(--soft); }
 
 /* PLANS */
-.plan-grid {
-  max-width:1400px;
-  margin:40px auto;
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-  gap:24px;
-  padding:20px;
-}
-.plan-card {
-  background:var(--glass);
-  border-radius:var(--radius);
-  border-left:5px solid var(--accent);
-  padding:25px 20px 30px;
-  display:flex;
-  flex-direction:column;
-}
+.plan-grid { max-width:1400px; margin:40px auto; display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr)); gap:24px; padding:20px; }
+.plan-card { background:var(--glass); border-radius:var(--radius); border-left:5px solid var(--accent); padding:25px 20px 30px; display:flex; flex-direction:column; }
 .plan-name { font-weight:700; color:var(--accent); }
 .plan-price { font-size:22px; font-weight:700; }
-.badge {
-  background:var(--accent);
-  color:#fff;
-  padding:5px 10px;
-  border-radius:12px;
-  font-size:12px;
-}
-.buy-btn {
-  background:var(--accent);
-  border:none;
-  padding:6px 15px;
-  border-radius:12px;
-  color:#fff;
-  cursor:pointer;
-}
+.badge { background:var(--accent); color:#fff; padding:5px 10px; border-radius:12px; font-size:12px; }
+.buy-btn { background:var(--accent); border:none; padding:6px 15px; border-radius:12px; color:#fff; cursor:pointer; }
 .buy-btn:hover { background:var(--accent2); }
 
 /* FOOTER */
-footer {
-  background:#070b15;
-  color:var(--soft);
-  text-align:center;
-  padding:30px 10px;
-}
+footer { background:#070b15; color:var(--soft); text-align:center; padding:30px 10px; }
 </style>
 </head>
 
@@ -175,7 +77,6 @@ footer {
     <div class="logo">OpsLink<span>Hosting</span></div>
     <div class="nav-links">
       <a href="index.html">Home</a>
-
       <div class="dropdown">
         <a href="website-hosting.html?filter=all" style="color:#4e8cff;">Website Hosting</a>
         <div class="dropdown-content">
@@ -184,13 +85,10 @@ footer {
           <a href="?filter=all">All</a>
         </div>
       </div>
-
       <a href="about.html">About</a>
       <a href="contact.html">Contact</a>
       <a href="support.html">Support</a>
-
       <a href="auth-login.html" class="login-btn" id="loginBtn">Login</a>
-
       <div id="userWrapper" style="position:relative; display:none;">
         <img id="userIcon" src="assets/user-circle.png" width="35">
         <div id="userDropdown">
@@ -209,7 +107,6 @@ footer {
 </section>
 
 <section class="plan-grid">
-
   <article class="plan-card" data-type="static">
     <div class="plan-name">Static Website - Basic</div>
     <div class="plan-price">$5 / mo</div>
@@ -223,7 +120,6 @@ footer {
     <span class="badge">2 GB Storage</span>
     <button type="button" class="buy-btn" data-plan="dynamic-basic">Order Now</button>
   </article>
-
 </section>
 
 <footer>
@@ -232,35 +128,82 @@ footer {
 </footer>
 
 <script>
-// ---------- NAVBAR ----------
-const token = localStorage.getItem("token");
+// ---------------- NAVBAR ----------------
+let token = localStorage.getItem("token");
 const loginBtn = document.getElementById("loginBtn");
 const userWrapper = document.getElementById("userWrapper");
 const userDropdown = document.getElementById("userDropdown");
 
-if (token) {
+if(token){
   loginBtn.style.display = "none";
   userWrapper.style.display = "inline-block";
 }
 
-document.getElementById("userIcon")?.addEventListener("click", e => {
+document.getElementById("userIcon")?.addEventListener("click", e=>{
   e.stopPropagation();
   userDropdown.classList.toggle("show");
 });
-
-document.addEventListener("click", () => userDropdown.classList.remove("show"));
-
-document.getElementById("logoutBtn")?.addEventListener("click", () => {
+document.addEventListener("click", ()=>userDropdown.classList.remove("show"));
+document.getElementById("logoutBtn")?.addEventListener("click", ()=>{
   localStorage.removeItem("token");
   location.reload();
 });
 
-// ---------- FILTER ----------
+// ---------------- FILTER ----------------
 const filter = new URLSearchParams(location.search).get("filter") || "all";
 document.querySelectorAll(".plan-card").forEach(card => {
-  card.style.display =
-    filter === "all" || card.dataset.type === filter ? "block" : "none";
+  card.style.display = filter === "all" || card.dataset.type === filter ? "block" : "none";
 });
+
+// ---------------- GUEST CHECKOUT ----------------
+document.querySelectorAll(".buy-btn").forEach(btn=>{
+  btn.addEventListener("click", async ()=>{
+    const plan = btn.dataset.plan;
+    try{
+      const res = await fetch("/api/checkout-session", {
+        method:"POST",
+        headers: { "Content-Type":"application/json", "Authorization": token ? `Bearer ${token}` : undefined },
+        body: JSON.stringify({ plan })
+      });
+      const data = await res.json();
+      if(data.success){
+        // If guest checkout, store guestUserId
+        if(data.guestUserId){
+          // Redirect to Stripe
+          window.location.href = data.url + `?guestUserId=${data.guestUserId}`;
+        } else {
+          window.location.href = data.url;
+        }
+      } else {
+        alert(data.message || "Checkout failed");
+      }
+    } catch(err){
+      console.error(err);
+      alert("Checkout error");
+    }
+  });
+});
+
+// ---------------- AUTO-LOGIN AFTER STRIPE ----------------
+const guestUserId = new URLSearchParams(location.search).get("guestUserId");
+if(guestUserId && !token){
+  (async ()=>{
+    try{
+      const res = await fetch(`/api/guest-token/${guestUserId}`);
+      const data = await res.json();
+      if(data.success){
+        token = data.token;
+        localStorage.setItem("token", token);
+        // Redirect to set-password page to complete setup
+        window.location.href = `/set-password.html?guestUserId=${guestUserId}`;
+      } else {
+        console.error("Guest login failed", data.message);
+      }
+    } catch(err){
+      console.error(err);
+    }
+  })();
+}
 </script>
 
 </body>
