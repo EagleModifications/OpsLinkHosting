@@ -3,12 +3,6 @@
 // ===============================
 
 // ===============================
-// Auth helpers
-// ===============================
-const token = localStorage.getItem("token");
-if (!token) window.location.href = "/auth-login.html";
-
-// ===============================
 // Discord logging helper
 // ===============================
 async function logDiscord(message, color = 0x4e8cff) {
@@ -18,33 +12,19 @@ async function logDiscord(message, color = 0x4e8cff) {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ message, color }),
     });
-  } catch (err) {
-    console.error("Discord logging failed:", err);
-  }
+  } catch (err) { console.error(err); }
 }
 
-// ===============================
 // UI helper
-// ===============================
-function uiAlert(message, title = "Notice") {
-  alert(`${title}: ${message}`);
-}
+function uiAlert(message, title = "Notice") { alert(`${title}: ${message}`); }
 
-// ===============================
 // User dropdown & logout
-// ===============================
 const userIcon = document.getElementById("userIcon");
 const userDropdown = document.getElementById("userDropdown");
 
-if (userIcon) {
-  userIcon.addEventListener("click", () => {
-    userDropdown.style.display = userDropdown.style.display === "block" ? "none" : "block";
-  });
-}
+if (userIcon) userIcon.addEventListener("click", () => userDropdown.style.display = userDropdown.style.display === "block" ? "none" : "block");
 
-window.onclick = e => {
-  if (!e.target.matches("#userIcon")) userDropdown.style.display = "none";
-};
+window.onclick = e => { if (!e.target.matches("#userIcon")) userDropdown.style.display = "none"; };
 
 document.getElementById("logoutBtn").addEventListener("click", async () => {
   localStorage.removeItem("token");
@@ -53,13 +33,37 @@ document.getElementById("logoutBtn").addEventListener("click", async () => {
 });
 
 // ===============================
+// Guest auto-login
+// ===============================
+const urlParams = new URLSearchParams(window.location.search);
+const guestUserId = urlParams.get("guestUserId");
+let token = localStorage.getItem("token");
+
+if (!token && guestUserId) {
+  fetch(`/api/guest-token/${guestUserId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data.success) {
+        localStorage.setItem("token", data.token);
+        token = data.token;
+        loadServers();
+      } else {
+        window.location.href = "/auth-login.html";
+      }
+    })
+    .catch(() => window.location.href = "/auth-login.html");
+} else if (!token) {
+  window.location.href = "/auth-login.html";
+} else {
+  loadServers();
+}
+
+// ===============================
 // Server functions
 // ===============================
 async function loadServers() {
   try {
-    const res = await fetch("/api/servers", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+    const res = await fetch("/api/servers", { headers: { Authorization: `Bearer ${token}` } });
     const data = await res.json();
     const container = document.getElementById("serversContainer");
     container.innerHTML = "";
@@ -96,21 +100,15 @@ async function loadServers() {
           <button class="btn btn-outline" ${!isActive ? "disabled" : ""} onclick="toggleBackup('${server._id}', ${!server.backupEnabled})">
             ${server.backupEnabled ? "Disable Backup" : "Enable Backup"}
           </button>
-          <button class="btn btn-outline" onclick="cancelServer('${server._id}')">
-            Cancel Server
-          </button>
-          <button class="btn btn-outline" onclick="upgradeServer('${server._id}')">
-            Upgrade Server
-          </button>
+          <button class="btn btn-outline" onclick="cancelServer('${server._id}')">Cancel Server</button>
+          <button class="btn btn-outline" onclick="upgradeServer('${server._id}')">Upgrade Server</button>
         </div>
         ${isPending ? "<p style='color:#ffb347; margin-top:10px;'>Server is pending creation... refreshing...</p>" : ""}
       `;
       container.appendChild(card);
     });
 
-    // Auto-refresh pending servers every 5s
     if (pendingExists) setTimeout(loadServers, 5000);
-
   } catch (err) {
     console.error(err);
     document.getElementById("serversContainer").innerHTML = "<p style='color:red; text-align:center;'>Failed to load servers</p>";
@@ -138,7 +136,6 @@ async function toggleBackup(serverId, enable) {
 // Cancel server
 async function cancelServer(serverId) {
   if (!confirm("Are you sure you want to cancel this server?")) return;
-
   try {
     const res = await fetch("/api/server/cancel", {
       method: "POST",
@@ -176,11 +173,3 @@ async function upgradeServer(serverId) {
     uiAlert("Failed to upgrade server");
   }
 }
-
-// ===============================
-// Initial load
-// ===============================
-document.addEventListener("DOMContentLoaded", () => {
-  loadServers();
-  console.log("[Account] Loaded account.js and initialized server display.");
-});
