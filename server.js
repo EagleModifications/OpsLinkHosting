@@ -139,48 +139,38 @@ app.post("/api/login", async (req, res) => {
 
 // ---------------- CHECKOUT SESSION ----------------
 app.post("/api/checkout-session", async (req, res) => {
-  const { plan, email } = req.body; // include email if user not logged in
+  const { plan, email } = req.body;
 
   try {
     let user;
+
+    // 1️⃣ Logged-in user
     if (req.headers.authorization) {
-      // logged in user
       const token = req.headers.authorization.split(" ")[1];
       const decoded = jwt.verify(token, process.env.JWT_SECRET);
       user = await User.findById(decoded.id);
-    } else if (email) {
-      // guest checkout, create user if doesn't exist
+    } 
+    // 2️⃣ Guest checkout
+    else if (email) {
       user = await User.findOne({ email });
       if (!user) {
-        const tempPassword = Math.random().toString(36).slice(-8);
-        const hashed = await bcrypt.hash(tempPassword, 10);
+        const tempPass = Math.random().toString(36).slice(-8);
+        const hashed = await bcrypt.hash(tempPass, 10);
         user = await User.create({ email, password: hashed });
         const customer = await stripe.customers.create({ email });
         user.stripeCustomerId = customer.id;
         await user.save();
-        // send email to set password
-        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
-        await transporter.sendMail({
-          to: email,
-          subject: "Set your panel password",
-          text: `Welcome! Set your password here: ${process.env.FRONTEND_URL}/set-password.html?token=${token}`
-        });
       }
     }
 
-    if (!user) return res.status(401).json({ success: false, message: "User not found" });
+    if (!user) return res.status(400).json({ success: false, message: "User not found" });
 
-    // map plan to Stripe price ID
+    // Map plan to priceId
     let priceId;
     switch (plan) {
-      case "static-basic":
-        priceId = process.env.PRICE_STATIC_BASIC;
-        break;
-      case "dynamic-basic":
-        priceId = process.env.PRICE_DYNAMIC_BASIC;
-        break;
-      default:
-        return res.status(400).json({ success: false, message: "Invalid plan selected" });
+      case "static-basic": priceId = process.env.PRICE_STATIC_BASIC; break;
+      case "dynamic-basic": priceId = process.env.PRICE_DYNAMIC_BASIC; break;
+      default: return res.status(400).json({ success: false, message: "Invalid plan" });
     }
 
     const session = await stripe.checkout.sessions.create({
@@ -189,15 +179,28 @@ app.post("/api/checkout-session", async (req, res) => {
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email,
       metadata: { userId: user._id.toString(), plan },
-      success_url: `${process.env.FRONTEND_URL}/account.html?success=true`,
+      success_url: `${process.env.FRONTEND_URL}/set-password.html?guestUserId=${user._id}`,
       cancel_url: `${process.env.FRONTEND_URL}/website-hosting.html?canceled=true`
     });
 
-    return res.json({ success: true, checkoutUrl: session.url });
-
+    res.json({ success: true, checkoutUrl: session.url });
   } catch (err) {
     console.error("[Stripe Checkout Error]", err);
-    return res.status(500).json({ success: false, message: "Failed to create checkout session" });
+    res.status(500).json({ success: false, message: "Failed to create checkout session" });
+  }
+});
+
+// ---------------- Guest token endpoint ----------------
+app.get("/api/guest-token/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id);
+    if (!user) return res.json({ success: false, message: "User not found" });
+
+    const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+    res.json({ success: true, token });
+  } catch (err) {
+    console.error(err);
+    res.json({ success: false, message: "Failed to generate token" });
   }
 });
 
@@ -209,7 +212,7 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
   try {
     event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (err) {
-    console.error("Webhook signature verification failed:", err.message);
+    console.error("Webhook verification failed:", err.message);
     return res.status(400).send("Webhook Error");
   }
 
@@ -223,17 +226,22 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
       const user = await User.findById(userId);
       if (!user) return res.json({ received: true });
 
-      const server = await Server.create({ user: user._id, plan, status: "pending", createdAt: new Date() });
+      const server = await Server.create({
+        user: user._id,
+        plan,
+        status: "pending",
+        createdAt: new Date()
+      });
+
       const cfg = PLAN_CONFIG[plan];
 
-      // Create Pterodactyl server under this user
       async function createPteroServer(retries = 3, delay = 3000) {
         try {
           const pteroRes = await axios.post(
             `${process.env.PTERO_URL}/api/application/servers`,
             {
               name: `OpsLink-${server._id}`,
-              user: user._id.toString(), // user ID in Pterodactyl
+              user: user._id.toString(),
               egg: cfg.egg,
               docker_image: cfg.docker,
               limits: { memory: cfg.memory, disk: cfg.disk, cpu: cfg.cpu },
@@ -253,10 +261,14 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           await transporter.sendMail({
             to: user.email,
             subject: "Server Ready",
-            text: `Your ${plan} server is now active.`
+            text: `Your ${plan} server is now active. You can log in with your panel password.`
           });
 
-          await discordLog("Server Created", `User: ${user.email}\nPlan: ${plan}\nPtero ID: ${server.pteroId}`, 0x00ff00);
+          await discordLog(
+            "Server Created",
+            `User: ${user.email}\nPlan: ${plan}\nPtero ID: ${server.pteroId}`,
+            0x00ff00
+          );
 
         } catch (err) {
           if (retries > 0) {
@@ -265,14 +277,13 @@ app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, r
           } else {
             server.status = "failed";
             await server.save();
-            console.error("Ptero server creation failed permanently:", err.message);
+            console.error("Ptero server creation failed:", err.message);
             await discordLog("Server Creation Failed", err.message, 0xff0000);
           }
         }
       }
 
       await createPteroServer();
-
     } catch (err) {
       console.error("Server provisioning failed:", err);
       await discordLog("Server Creation Failed", err.message, 0xff0000);
