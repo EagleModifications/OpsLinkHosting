@@ -46,7 +46,7 @@ async function logToDiscord(message, color = 0x4e8cff) {
 // ===============================
 async function loadServers() {
   const container = document.getElementById("serversContainer");
-  if (!container) return; // <-- safely exit if container doesn't exist
+  if (!container) return;
 
   const token = getToken();
   if (!token) return;
@@ -125,7 +125,7 @@ async function serverAction(endpoint, payload, logMessage) {
     const res = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : undefined,
         "Content-Type": "application/json",
       },
       body: JSON.stringify(payload),
@@ -164,9 +164,12 @@ const upgradeServer = (serverId) => {
 // ===============================
 async function purchaseServer(plan) {
   const token = getToken();
+  let email = null;
+
   if (!token) {
-    uiAlert("You must be logged in", "Auth Required");
-    return;
+    // guest checkout: prompt for email
+    email = prompt("Enter your email to purchase server:");
+    if (!email) return uiAlert("Email is required for purchase", "Error");
   }
 
   if (!plan) {
@@ -180,10 +183,10 @@ async function purchaseServer(plan) {
     const res = await fetch("/api/checkout-session", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token}`,
+        Authorization: token ? `Bearer ${token}` : undefined,
         "Content-Type": "application/json",
       },
-      body: JSON.stringify({ plan }),
+      body: JSON.stringify({ plan, email }),
     });
 
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
