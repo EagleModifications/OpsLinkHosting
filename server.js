@@ -14,7 +14,7 @@ const app = express();
 
 // ---------------- MIDDLEWARE ----------------
 app.use(cors());
-app.use(bodyParser.json()); // for regular JSON requests
+app.use(bodyParser.json());
 app.use(express.static("public"));
 app.use("/js", express.static(path.join(__dirname, "js")));
 
@@ -139,26 +139,38 @@ app.post("/api/login", async (req, res) => {
 
 // ---------------- CHECKOUT SESSION ----------------
 app.post("/api/checkout-session", async (req, res) => {
-  const { plan } = req.body;
+  const { plan, email } = req.body; // include email if user not logged in
 
   try {
-    // 1️⃣ Check for auth token
-    const authHeader = req.headers.authorization;
-    if (!authHeader) return res.status(401).json({ success: false, message: "No auth token" });
-
-    const token = authHeader.split(" ")[1];
-    let decoded;
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET);
-    } catch {
-      return res.status(401).json({ success: false, message: "Token expired or invalid" });
+    let user;
+    if (req.headers.authorization) {
+      // logged in user
+      const token = req.headers.authorization.split(" ")[1];
+      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      user = await User.findById(decoded.id);
+    } else if (email) {
+      // guest checkout, create user if doesn't exist
+      user = await User.findOne({ email });
+      if (!user) {
+        const tempPassword = Math.random().toString(36).slice(-8);
+        const hashed = await bcrypt.hash(tempPassword, 10);
+        user = await User.create({ email, password: hashed });
+        const customer = await stripe.customers.create({ email });
+        user.stripeCustomerId = customer.id;
+        await user.save();
+        // send email to set password
+        const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET, { expiresIn: "1h" });
+        await transporter.sendMail({
+          to: email,
+          subject: "Set your panel password",
+          text: `Welcome! Set your password here: ${process.env.FRONTEND_URL}/set-password.html?token=${token}`
+        });
+      }
     }
 
-    // 2️⃣ Fetch user from DB
-    const user = await User.findById(decoded.id);
-    if (!user) return res.status(404).json({ success: false, message: "User not found" });
+    if (!user) return res.status(401).json({ success: false, message: "User not found" });
 
-    // 3️⃣ Map plan to Stripe price ID
+    // map plan to Stripe price ID
     let priceId;
     switch (plan) {
       case "static-basic":
@@ -171,21 +183,18 @@ app.post("/api/checkout-session", async (req, res) => {
         return res.status(400).json({ success: false, message: "Invalid plan selected" });
     }
 
-    // 4️⃣ Create Stripe checkout session with metadata
     const session = await stripe.checkout.sessions.create({
       mode: "subscription",
       payment_method_types: ["card"],
       line_items: [{ price: priceId, quantity: 1 }],
       customer_email: user.email,
-      metadata: {
-        userId: user._id.toString(),
-        plan
-      },
+      metadata: { userId: user._id.toString(), plan },
       success_url: `${process.env.FRONTEND_URL}/account.html?success=true`,
       cancel_url: `${process.env.FRONTEND_URL}/website-hosting.html?canceled=true`
     });
 
     return res.json({ success: true, checkoutUrl: session.url });
+
   } catch (err) {
     console.error("[Stripe Checkout Error]", err);
     return res.status(500).json({ success: false, message: "Failed to create checkout session" });
@@ -193,109 +202,85 @@ app.post("/api/checkout-session", async (req, res) => {
 });
 
 // ---------------- STRIPE WEBHOOK ----------------
-app.post(
-  "/webhook",
-  bodyParser.raw({ type: "application/json" }),
-  async (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    let event;
+app.post("/webhook", bodyParser.raw({ type: "application/json" }), async (req, res) => {
+  const sig = req.headers["stripe-signature"];
+  let event;
+
+  try {
+    event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
+  } catch (err) {
+    console.error("Webhook signature verification failed:", err.message);
+    return res.status(400).send("Webhook Error");
+  }
+
+  if (event.type === "checkout.session.completed") {
+    const session = event.data.object;
+    const { userId, plan } = session.metadata || {};
+
+    if (!userId || !plan) return res.json({ received: true });
 
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, process.env.STRIPE_WEBHOOK_SECRET);
-    } catch (err) {
-      console.error("Webhook signature verification failed:", err.message);
-      return res.status(400).send("Webhook Error");
-    }
+      const user = await User.findById(userId);
+      if (!user) return res.json({ received: true });
 
-    if (event.type === "checkout.session.completed") {
-      const session = event.data.object;
-      const { userId, plan } = session.metadata || {};
+      const server = await Server.create({ user: user._id, plan, status: "pending", createdAt: new Date() });
+      const cfg = PLAN_CONFIG[plan];
 
-      if (!userId || !plan) {
-        console.error("Webhook missing metadata: userId or plan");
-        return res.json({ received: true });
-      }
+      // Create Pterodactyl server under this user
+      async function createPteroServer(retries = 3, delay = 3000) {
+        try {
+          const pteroRes = await axios.post(
+            `${process.env.PTERO_URL}/api/application/servers`,
+            {
+              name: `OpsLink-${server._id}`,
+              user: user._id.toString(), // user ID in Pterodactyl
+              egg: cfg.egg,
+              docker_image: cfg.docker,
+              limits: { memory: cfg.memory, disk: cfg.disk, cpu: cfg.cpu },
+              feature_limits: { backups: cfg.backups },
+              environment: cfg.environment,
+              startup: "",
+              deploy: { locations: [1], dedicated_ip: false }
+            },
+            { headers: { Authorization: `Bearer ${process.env.PTERO_API_KEY}`, "Content-Type": "application/json" } }
+          );
 
-      try {
-        const user = await User.findById(userId);
-        if (!user) return res.json({ received: true });
+          server.pteroId = pteroRes.data.attributes.id;
+          server.status = "active";
+          server.stripeSubscriptionId = session.subscription;
+          await server.save();
 
-        const server = await Server.create({
-          user: user._id,
-          plan,
-          status: "pending",
-          createdAt: new Date()
-        });
+          await transporter.sendMail({
+            to: user.email,
+            subject: "Server Ready",
+            text: `Your ${plan} server is now active.`
+          });
 
-        const cfg = PLAN_CONFIG[plan];
+          await discordLog("Server Created", `User: ${user.email}\nPlan: ${plan}\nPtero ID: ${server.pteroId}`, 0x00ff00);
 
-        // Function to create Pterodactyl server with retry
-        async function createPteroServer(retries = 3, delay = 3000) {
-          try {
-            const pteroRes = await axios.post(
-              `${process.env.PTERO_URL}/api/application/servers`,
-              {
-                name: `OpsLink-${server._id}`,
-                user: user._id.toString(),
-                egg: cfg.egg,
-                docker_image: cfg.docker,
-                limits: { memory: cfg.memory, disk: cfg.disk, cpu: cfg.cpu },
-                feature_limits: { backups: cfg.backups },
-                environment: cfg.environment,
-                startup: "",
-                deploy: { locations: [1], dedicated_ip: false }
-              },
-              {
-                headers: {
-                  Authorization: `Bearer ${process.env.PTERO_API_KEY}`,
-                  "Content-Type": "application/json"
-                }
-              }
-            );
-
-            server.pteroId = pteroRes.data.attributes.id;
-            server.status = "active";
-            server.stripeSubscriptionId = session.subscription;
+        } catch (err) {
+          if (retries > 0) {
+            await new Promise(r => setTimeout(r, delay));
+            await createPteroServer(retries - 1, delay * 2);
+          } else {
+            server.status = "failed";
             await server.save();
-
-            // Notify user
-            await transporter.sendMail({
-              to: user.email,
-              subject: "Server Ready",
-              text: `Your ${plan} server is now active.`
-            });
-
-            await discordLog(
-              "Server Created",
-              `User: ${user.email}\nPlan: ${plan}\nPtero ID: ${server.pteroId}`,
-              0x00ff00
-            );
-
-          } catch (err) {
-            if (retries > 0) {
-              console.warn(`Ptero API failed, retrying in ${delay / 1000}s... (${retries} left)`);
-              await new Promise(r => setTimeout(r, delay));
-              await createPteroServer(retries - 1, delay * 2); // exponential backoff
-            } else {
-              server.status = "failed";
-              await server.save();
-              console.error("Ptero server creation failed permanently:", err.message);
-              await discordLog("Server Creation Failed", err.message, 0xff0000);
-            }
+            console.error("Ptero server creation failed permanently:", err.message);
+            await discordLog("Server Creation Failed", err.message, 0xff0000);
           }
         }
-
-        await createPteroServer(); // call the function
-
-      } catch (err) {
-        console.error("Server provisioning failed:", err);
-        await discordLog("Server Creation Failed", err.message, 0xff0000);
       }
-    }
 
-    res.json({ received: true });
+      await createPteroServer();
+
+    } catch (err) {
+      console.error("Server provisioning failed:", err);
+      await discordLog("Server Creation Failed", err.message, 0xff0000);
+    }
   }
-);
+
+  res.json({ received: true });
+});
 
 // ---------------- GET SERVERS ----------------
 app.get("/api/servers", authMiddleware, async (req, res) => {
